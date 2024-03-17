@@ -2,7 +2,8 @@
 
 namespace App\Service;
 
-use App\Utils\FilenameParser;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class NoteService
 {
@@ -13,18 +14,45 @@ class NoteService
         $this->path = $path ?? $_ENV['DATA_PATH'];
     }
 
-    public function all(): array
+    public function index(): array
     {
-        $files = scandir($this->path);
+        $files = array_filter(scandir($this->path),
+            fn ($file) => str_ends_with($file, '.txt'));
 
-        return FilenameParser::toNotes($files);
+        return array_values($files);
     }
 
-    public function for(?string $filename = null): array
+    public function today(string $content): bool
     {
-        return [
-            ...FilenameParser::toNote($filename),
-            'content' => file_get_contents("{$this->path}/{$filename}"),
-        ];
+        $date = (new \DateTime())->format('Ymd');
+        $filepath = "{$this->path}/{$date}.txt";
+
+        return (bool)file_put_contents($filepath, $content);
+    }
+
+    public function show(?string $filename = null): array
+    {
+        $filepath = "{$this->path}/{$filename}";
+        $content = null;
+
+        if (file_exists($filepath)) {
+            $content = file_get_contents($filepath);
+        }
+
+        if ($content) {
+            return [
+                'filename' => $filename,
+                'content' => $content,
+            ];
+        }
+
+        return [];
+    }
+
+    public function update(string $filename, string $content): bool
+    {
+        $filepath = "{$this->path}/{$filename}";
+
+        return (bool)file_put_contents($filepath, $content);
     }
 }
