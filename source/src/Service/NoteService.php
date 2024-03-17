@@ -19,6 +19,8 @@ class NoteService
         $files = array_filter(scandir($this->path),
             fn ($file) => str_ends_with($file, '.txt'));
 
+        $files = array_map(fn ($item) => ['filename' => $item], $files);
+
         return array_values($files);
     }
 
